@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cartografía</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: #0f0f1a;
+  font-family: Arial, sans-serif;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  user-select: none;
+}
+#label {
+  color: rgba(255,255,255,0.5);
+  font-size: 13px;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+}
+#canvas-container {
+  width: 400px;
+  height: 400px;
+  cursor: grab;
+}
+#canvas-container:active { cursor: grabbing; }
+#face-info {
+  color: rgba(255,255,255,0.5);
+  font-size: 14px;
+  letter-spacing: 1px;
+  min-height: 24px;
+  text-align: center;
+  font-family: monospace;
+}
+#nav-panel {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  max-width: 440px;
+}
+.nav-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.15);
+  background: rgba(255,255,255,0.05);
+  color: #fff;
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.nav-btn:hover { background: rgba(255,255,255,0.15); }
+.dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+#hint {
+  font-size: 11px;
+  color: rgba(255,255,255,0.2);
+  letter-spacing: 2px;
+  font-family: monospace;
+}
+</style>
+</head>
+<body>
+
+<div id="label">cartografía</div>
+<div id="canvas-container"></div>
+<div id="face-info">arrastra el cubo · clic para entrar</div>
+<div id="hint">ARRASTRA PARA ROTAR · CLIC EN UNA CARA PARA NAVEGAR</div>
+
+<div id="nav-panel">
+  <a class="nav-btn" href="perfil.html">    <span class="dot" style="background:#b8dcf5"></span>Perfil</a>
+  <a class="nav-btn" href="estudios.html">  <span class="dot" style="background:#7d0939"></span>Estudios</a>
+  <a class="nav-btn" href="portafolio.html"><span class="dot" style="background:#a8a6a1"></span>Portafolio</a>
+  <a class="nav-btn" href="proyectos.html"> <span class="dot" style="background:#064210"></span>Proyectos</a>
+  <a class="nav-btn" href="herencia.html">  <span class="dot" style="background:#7d1e00"></span>Herencia</a>
+  <a class="nav-btn" href="dudas.html">     <span class="dot" style="background:#333333"></span>Dudas</a>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+<script>
+var faces = [
+  { label: 'Perfil',     url: 'perfil.html',     color: 0xb8dcf5, icon: '🌛' },
+  { label: 'Estudios',   url: 'estudios.html',   color: 0x7d0939, icon: '💼' },
+  { label: 'Portafolio', url: 'portafolio.html', color: 0xa8a6a1, icon: '🎨' },
+  { label: 'Proyectos',  url: 'proyectos.html',  color: 0x064210, icon: '👥' },
+  { label: 'Herencia',   url: 'herencia.html',   color: 0x7d1e00, icon: '🫀' },
+  { label: 'Dudas',      url: 'dudas.html',      color: 0x111111, icon: '⏳' }
+];
+
+var faceOrder = [2, 3, 0, 1, 5, 4];
+
+function makeTexture(face) {
+  var c = document.createElement('canvas');
+  c.width = 256; c.height = 256;
+  var ctx = c.getContext('2d');
+  var r = parseInt(('000000' + face.color.toString(16)).slice(-6).substring(0,2), 16);
+  var g = parseInt(('000000' + face.color.toString(16)).slice(-6).substring(2,4), 16);
+  var b = parseInt(('000000' + face.color.toString(16)).slice(-6).substring(4,6), 16);
+  ctx.fillStyle = 'rgb(' + r + ',' + g + ',' + b + ')';
+  ctx.fillRect(0, 0, 256, 256);
+  ctx.strokeStyle = 'rgba(255,255,255,0.25)';
+  ctx.lineWidth = 6;
+  ctx.beginPath();
+  ctx.roundRect(8, 8, 240, 240, 20);
+  ctx.stroke();
+  ctx.font = '64px serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(face.icon, 128, 90);
+  ctx.fillStyle = '#ffffff';
+  ctx.font = 'bold 32px Arial';
+  ctx.fillText(face.label, 128, 168);
+  return new THREE.CanvasTexture(c);
+}
+
+var W = 400, H = 400;
+var scene = new THREE.Scene();
+var camera = new THREE.PerspectiveCamera(45, W/H, 0.1, 100);
+camera.position.z = 3.5;
+var renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+renderer.setSize(W, H);
+renderer.setPixelRatio(window.devicePixelRatio);
+document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+var materials = faceOrder.map(function(i) {
+  return new THREE.MeshBasicMaterial({ map: makeTexture(faces[i]) });
+});
+var geometry = new THREE.BoxGeometry(2, 2, 2);
+var cube = new THREE.Mesh(geometry, materials);
+cube.rotation.x = -0.35;
+cube.rotation.y =  0.52;
+scene.add(cube);
+
+var autoRotate = true, isDragging = false, prevX = 0, prevY = 0;
+
+function animate() {
+  requestAnimationFrame(animate);
+  if (!isDragging && autoRotate) cube.rotation.y += 0.008;
+  renderer.render(scene, camera);
+}
+animate();
+
+var container = document.getElementById('canvas-container');
+var clickStart = { x: 0, y: 0 };
+
+container.addEventListener('mousedown', function(e) {
+  isDragging = true; autoRotate = false;
+  prevX = e.clientX; prevY = e.clientY;
+  clickStart.x = e.clientX; clickStart.y = e.clientY;
+});
+window.addEventListener('mousemove', function(e) {
+  if (!isDragging) return;
+  cube.rotation.y += (e.clientX - prevX) * 0.01;
+  cube.rotation.x += (e.clientY - prevY) * 0.01;
+  prevX = e.clientX; prevY = e.clientY;
+});
+window.addEventListener('mouseup', function(e) {
+  isDragging = false;
+  var dx = Math.abs(e.clientX - clickStart.x);
+  var dy = Math.abs(e.clientY - clickStart.y);
+  if (dx > 5 || dy > 5) return;
+  var rect = container.getBoundingClientRect();
+  var mouse = new THREE.Vector2();
+  mouse.x =  ((e.clientX - rect.left) / W) * 2 - 1;
+  mouse.y = -((e.clientY - rect.top)  / H) * 2 + 1;
+  var raycaster = new THREE.Raycaster();
+  raycaster.setFromCamera(mouse, camera);
+  var hits = raycaster.intersectObject(cube);
+  if (hits.length > 0) {
+    var fi = Math.floor(hits[0].faceIndex / 2);
+    var data = faces[faceOrder[fi]];
+    document.getElementById('face-info').textContent = '→ ' + data.label;
+    setTimeout(function() { window.location.href = data.url; }, 300);
+  }
+});
+
+container.addEventListener('touchstart', function(e) {
+  isDragging = true; autoRotate = false;
+  prevX = e.touches[0].clientX; prevY = e.touches[0].clientY;
+  clickStart.x = prevX; clickStart.y = prevY;
+}, { passive: true });
+window.addEventListener('touchmove', function(e) {
+  if (!isDragging) return;
+  cube.rotation.y += (e.touches[0].clientX - prevX) * 0.01;
+  cube.rotation.x += (e.touches[0].clientY - prevY) * 0.01;
+  prevX = e.touches[0].clientX; prevY = e.touches[0].clientY;
+}, { passive: true });
+window.addEventListener('touchend', function() { isDragging = false; });
+</script>
+</body>
+</html>
