@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cubo de Navegación 3D</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #f7f6f3;
+      --bg2: #eeecea;
+      --text: #1a1a18;
+      --text2: #6b6b67;
+      --text3: #9f9f9a;
+      --border: rgba(0,0,0,0.12);
+      --border2: rgba(0,0,0,0.22);
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #1a1a18;
+        --bg2: #242420;
+        --text: #f0ede8;
+        --text2: #9f9f9a;
+        --text3: #6b6b67;
+        --border: rgba(255,255,255,0.1);
+        --border2: rgba(255,255,255,0.2);
+      }
+    }
+
+    body {
+      font-family: 'Syne', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem 1rem;
+      gap: 2rem;
+    }
+
+    .cube-title {
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--text3);
+    }
+
+    .cube-wrapper {
+      perspective: 900px;
+      width: 200px;
+      height: 200px;
+      cursor: grab;
+      user-select: none;
+    }
+
+    .cube-wrapper:active { cursor: grabbing; }
+
+    .cube {
+      width: 200px;
+      height: 200px;
+      position: relative;
+      transform-style: preserve-3d;
+    }
+
+    .cube-face {
+      position: absolute;
+      width: 200px;
+      height: 200px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      border: 2px solid rgba(255,255,255,0.25);
+      border-radius: 12px;
+      cursor: pointer;
+      transition: filter 0.2s;
+      text-decoration: none;
+    }
+
+    .cube-face:hover { filter: brightness(1.15); }
+
+    .cube-face .face-icon { font-size: 36px; color: #fff; line-height: 1; }
+    .cube-face .face-label {
+      font-family: 'Syne', sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: 0.05em;
+      text-align: center;
+    }
+    .cube-face .face-sub {
+      font-family: 'Space Mono', monospace;
+      font-size: 10px;
+      color: rgba(255,255,255,0.7);
+      letter-spacing: 0.06em;
+    }
+
+    /* ── Posición de cada cara ── */
+    .face-front  { transform: translateZ(100px);              background: #3B3B9E; }
+    .face-back   { transform: rotateY(180deg) translateZ(100px); background: #0F6E56; }
+    .face-right  { transform: rotateY(90deg)  translateZ(100px); background: #993C1D; }
+    .face-left   { transform: rotateY(-90deg) translateZ(100px); background: #713085; }
+    .face-top    { transform: rotateX(90deg)  translateZ(100px); background: #185FA5; }
+    .face-bottom { transform: rotateX(-90deg) translateZ(100px); background: #854F0B; }
+
+    /* ── Panel de botones ── */
+    .face-panel {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+      max-width: 480px;
+      width: 100%;
+    }
+
+    .face-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 14px;
+      border-radius: 8px;
+      border: 0.5px solid var(--border2);
+      background: var(--bg);
+      cursor: pointer;
+      font-family: 'Syne', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+      transition: background 0.15s, transform 0.1s;
+      text-decoration: none;
+    }
+
+    .face-btn:hover {
+      background: var(--bg2);
+      transform: scale(1.04);
+    }
+
+    .face-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .hint {
+      font-size: 12px;
+      color: var(--text3);
+      font-family: 'Space Mono', monospace;
+      letter-spacing: 0.05em;
+    }
+
+    .auto-toggle {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 16px;
+      border-radius: 20px;
+      border: 0.5px solid var(--border2);
+      background: var(--bg2);
+      cursor: pointer;
+      font-family: 'Syne', sans-serif;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text2);
+      transition: background 0.15s;
+    }
+    .auto-toggle:hover { background: var(--bg); }
+  </style>
+</head>
+<body>
+
+  <span class="cube-title">Navegación · Cubo 3D</span>
+
+  <div class="cube-wrapper" id="cubeWrapper">
+    <div class="cube" id="cube">
+
+      <!-- CARA FRONTAL — cambia href por tu URL real -->
+      <a class="cube-face face-front" href="/inicio">
+        <i class="ti ti-home face-icon" aria-hidden="true"></i>
+        <span class="face-label">Inicio</span>
+        <span class="face-sub">→ /home</span>
+      </a>
+
+      <!-- CARA TRASERA -->
+      <a class="cube-face face-back" href="/servicios">
+        <i class="ti ti-briefcase face-icon" aria-hidden="true"></i>
+        <span class="face-label">Servicios</span>
+        <span class="face-sub">→ /services</span>
+      </a>
+
+      <!-- CARA DERECHA -->
+      <a class="cube-face face-right" href="/portafolio">
+        <i class="ti ti-layout-grid face-icon" aria-hidden="true"></i>
+        <span class="face-label">Portafolio</span>
+        <span class="face-sub">→ /work</span>
+      </a>
+
+      <!-- CARA IZQUIERDA -->
+      <a class="cube-face face-left" href="/nosotros">
+        <i class="ti ti-users face-icon" aria-hidden="true"></i>
+        <span class="face-label">Nosotros</span>
+        <span class="face-sub">→ /about</span>
+      </a>
+
+      <!-- CARA SUPERIOR -->
+      <a class="cube-face face-top" href="/blog">
+        <i class="ti ti-pencil face-icon" aria-hidden="true"></i>
+        <span class="face-label">Blog</span>
+        <span class="face-sub">→ /blog</span>
+      </a>
+
+      <!-- CARA INFERIOR -->
+      <a class="cube-face face-bottom" href="/contacto">
+        <i class="ti ti-mail face-icon" aria-hidden="true"></i>
+        <span class="face-label">Contacto</span>
+        <span class="face-sub">→ /contact</span>
+      </a>
+
+    </div>
+  </div>
+
+  <button class="auto-toggle" id="autoBtn" onclick="toggleAuto()">
+    <i class="ti ti-rotate-clockwise" aria-hidden="true"></i>
+    Auto-rotar: ON
+  </button>
+
+  <span class="hint">← arrastra para rotar · clic para navegar →</span>
+
+  <div class="face-panel">
+    <a class="face-btn" href="/inicio">    <span class="face-dot" style="background:#3B3B9E;"></span>Inicio</a>
+    <a class="face-btn" href="/servicios"> <span class="face-dot" style="background:#0F6E56;"></span>Servicios</a>
+    <a class="face-btn" href="/portafolio"><span class="face-dot" style="background:#993C1D;"></span>Portafolio</a>
+    <a class="face-btn" href="/nosotros">  <span class="face-dot" style="background:#713085;"></span>Nosotros</a>
+    <a class="face-btn" href="/blog">      <span class="face-dot" style="background:#185FA5;"></span>Blog</a>
+    <a class="face-btn" href="/contacto">  <span class="face-dot" style="background:#854F0B;"></span>Contacto</a>
+  </div>
+
+  <script>
+    let rotX = -20, rotY = 30;
+    let isDragging = false;
+    let lastX = 0, lastY = 0;
+    let autoRotate = true;
+
+    const cube = document.getElementById('cube');
+    const wrapper = document.getElementById('cubeWrapper');
+
+    function applyTransform() {
+      cube.style.transform = `rotateX(${rotX}deg) rotateY(${rotY}deg)`;
+    }
+
+    (function loop() {
+      if (autoRotate && !isDragging) {
+        rotY += 0.4;
+        applyTransform();
+      }
+      requestAnimationFrame(loop);
+    })();
+
+    wrapper.addEventListener('mousedown', e => {
+      isDragging = true;
+      lastX = e.clientX;
+      lastY = e.clientY;
+      e.preventDefault();
+    });
+    window.addEventListener('mousemove', e => {
+      if (!isDragging) return;
+      rotY += (e.clientX - lastX) * 0.5;
+      rotX -= (e.clientY - lastY) * 0.5;
+      rotX = Math.max(-85, Math.min(85, rotX));
+      lastX = e.clientX;
+      lastY = e.clientY;
+      applyTransform();
+    });
+    window.addEventListener('mouseup', () => { isDragging = false; });
+
+    wrapper.addEventListener('touchstart', e => {
+      isDragging = true;
+      lastX = e.touches[0].clientX;
+      lastY = e.touches[0].clientY;
+    }, { passive: true });
+    window.addEventListener('touchmove', e => {
+      if (!isDragging) return;
+      rotY += (e.touches[0].clientX - lastX) * 0.5;
+      rotX -= (e.touches[0].clientY - lastY) * 0.5;
+      rotX = Math.max(-85, Math.min(85, rotX));
+      lastX = e.touches[0].clientX;
+      lastY = e.touches[0].clientY;
+      applyTransform();
+    }, { passive: true });
+    window.addEventListener('touchend', () => { isDragging = false; });
+
+    function toggleAuto() {
+      autoRotate = !autoRotate;
+      document.getElementById('autoBtn').innerHTML =
+        `<i class="ti ti-rotate-clockwise" aria-hidden="true"></i> Auto-rotar: ${autoRotate ? 'ON' : 'OFF'}`;
+    }
+
+    applyTransform();
+  </script>
+
+</body>
+</html>
